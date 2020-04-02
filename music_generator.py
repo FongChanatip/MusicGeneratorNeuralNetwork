@@ -6,6 +6,9 @@ import os
 keras = tf.keras
 
 
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+
+
 def parse_midi(file_dir):
     notes = []
     try:
@@ -46,11 +49,17 @@ class GenerateMusic(object):
     def __init__(self):
 
         # Load training dataset
-        self.dataset = json.loads(open('music_data.json', 'r').read())
+        self.dataset = json.loads(
+            open(os.path.join(BASE_DIR, 'music_data.json'), 'r').read()
+        )
         # Load dictionary for changing notes and chords into int
-        self.note_dict = json.loads(open('note_dict.json', 'r').read())
+        self.note_dict = json.loads(
+            open(os.path.join(BASE_DIR, 'note_dict.json'), 'r').read()
+        )
         # Load list of existing notes and chords
-        self.note_list = json.loads(open('note_list.json', 'r').read())
+        self.note_list = json.loads(
+            open(os.path.join(BASE_DIR, 'note_list.json'), 'r').read()
+        )
 
     def notes_to_ints(self, music_notes):
 
@@ -104,7 +113,9 @@ class GenerateMusic(object):
         data = data.shuffle(10000).batch(64, drop_remainder=True)
 
         train_model = self.build_model(64)
-        train_model.load_weights('pretrained/weights/variables')
+        train_model.load_weights(
+            os.path.join(BASE_DIR, 'pretrained/weights/variables')
+        )
 
         train_model.compile(optimizer='adam', loss=loss)
         train_model.fit(data, epochs=int(epochs))
@@ -113,7 +124,9 @@ class GenerateMusic(object):
 
     def default_model(self):
 
-        model = tf.keras.models.load_model('pretrained/music_generator_model.h5')
+        model = tf.keras.models.load_model(
+            os.path.join(BASE_DIR, 'pretrained/music_generator_model.h5')
+        )
 
         return model
 
@@ -171,7 +184,7 @@ class GenerateMusic(object):
             offset += 0.5
 
         midi_stream = stream.Stream(output_notes)
-        midi_stream.write('midi', fp=f'{name}.mid')
+        midi_stream.write('midi', fp=os.path.join(BASE_DIR, f'{name}.mid'))
 
     def generate_from_input(self):
 
