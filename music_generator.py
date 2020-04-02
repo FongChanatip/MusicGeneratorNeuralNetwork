@@ -176,14 +176,15 @@ class GenerateMusic(object):
     def generate_from_input(self):
 
         starting_notes = []
-        inp_note = input('Please type the starting note/chord >')
+        print('Accepted note format is note A-G follow by number of octave, for example, "A4", "C3"')
+        inp_note = input('Please type the starting note >')
         starting_notes.append(inp_note)
 
         while True:
-            more_inp = input('Do you wish to add more starting notes/chords [y/N] >')
+            more_inp = input('Do you wish to add more starting notes [y/N] >')
 
             if str(more_inp) in ['Y', 'y']:
-                inp_note = input('Please type more note/chord >')
+                inp_note = input('Please type more note >')
                 starting_notes.append(inp_note)
             elif str(more_inp) in ['N', 'n']:
                 break
