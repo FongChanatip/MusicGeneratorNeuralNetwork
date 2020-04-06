@@ -211,3 +211,18 @@ class GenerateMusic(object):
 
 if __name__ == '__main__':
     GenerateMusic().generate_from_input()
+
+
+def generate_from_genre(selected_genre, starting_notes, name):
+
+    genres = ['country', 'christmas', 'jazz']
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+
+    if selected_genre not in genres:
+        raise ValueError
+
+    model = tf.keras.models.load_model(os.path.join(base_dir, f'{selected_genre}.h5'))
+    GenerateMusic().generate_music(starting_notes, name, model)
+
+
+
