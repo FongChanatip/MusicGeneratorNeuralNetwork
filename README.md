@@ -26,13 +26,8 @@ for file in os.listdir(dataset_dir):
     # parse each midi file into notes and chords
     musics.append(parse_midi(os.path.join(dataset_dir, file)))
 
-# train the model
-weights = GenerateMusic().train([note for music in musics for note in music], epochs=50)
-
-# build new model from trained model with batch size of 1
-model = GenerateMusic().build_model(1)
-model.set_weights(weights)
-
+generator = MusicGenerator()
+generator.train([note for music in musics for note in music], epochs=2)
 # generate music
-GenerateMusic().generate_music(['C4', 'D4'], 'name', model)
+generator.generate_music(['C4', 'D4'], 'name')
 ```

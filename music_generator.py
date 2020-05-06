@@ -44,9 +44,9 @@ def loss(labels, logits):
     return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
 
 
-class GenerateMusic(object):
+class MusicGenerator:
 
-    def __init__(self):
+    def __init__(self, model=None):
 
         # Load training dataset
         self.dataset = json.loads(
@@ -60,6 +60,10 @@ class GenerateMusic(object):
         self.note_list = json.loads(
             open(os.path.join(BASE_DIR, 'note_list.json'), 'r').read()
         )
+        if model is not None:
+            self.selected_model = model
+        else:
+            self.selected_model = self.default_model()
 
     def notes_to_ints(self, music_notes):
 
@@ -67,7 +71,7 @@ class GenerateMusic(object):
 
         for music_note in music_notes:
             try:
-                notes_as_ints.append(self.note_dict[music_note])
+                notes_as_ints.append(int(self.note_dict[music_note]))
             except KeyError:
                 notes_as_ints.append(0)
 
@@ -77,7 +81,7 @@ class GenerateMusic(object):
 
         return self.note_list[int_val]
 
-    def build_model(self, batch_size):
+    def build_model(self, batch_size, weights=None, set_default=False):
 
         model = keras.Sequential([
             keras.layers.Embedding(len(self.note_list), 256, batch_size=batch_size),
@@ -88,8 +92,13 @@ class GenerateMusic(object):
             ),
             keras.layers.Dense(len(self.note_list))
         ])
-
-        return model
+        if weights:
+            if set_default:
+                model.set_weights(weights)
+                self.selected_model = model
+            return model
+        else:
+            return model
 
     def train(self, data, epochs=50):
 
@@ -100,13 +109,13 @@ class GenerateMusic(object):
         data (list): 1D array of notes and chords that were extract from midi_to_list function
         epoch (int): Number of epoch to train on
 
-        :return: weights of a trained model
+        :return: trained_model
         '''
 
         notes_as_ints = self.notes_to_ints(data)
 
         seq_length = 150
-        print(notes_as_ints)
+
         dataset = tf.data.Dataset.from_tensor_slices(notes_as_ints)
         sequences = dataset.batch(seq_length + 1, drop_remainder=True)
         data = sequences.map(split_input_target)
@@ -119,8 +128,12 @@ class GenerateMusic(object):
 
         train_model.compile(optimizer='adam', loss=loss)
         train_model.fit(data, epochs=int(epochs))
+        train_weights = train_model.get_weights()
+        train_model = None
 
-        return train_model.get_weights()
+        model = self.build_model(1, weights=train_weights, set_default=True)
+
+        return model
 
     def default_model(self):
 
@@ -130,8 +143,10 @@ class GenerateMusic(object):
 
         return model
 
-    def generate_music(self, start_note, name, model, complexity=2.0, num_generate=100):
+    def generate_music(self, start_note, name, complexity=2.0, num_generate=100):
         # Generate music from model
+
+        model = self.selected_model
 
         # convert note in to int
         input_eval = self.notes_to_ints(start_note)
@@ -205,12 +220,12 @@ class GenerateMusic(object):
                 print('please type y or N')
 
         name = str(input('Music name >'))
-        model = self.default_model()
-        self.generate_music(starting_notes, name, model)
 
+        self.generate_music(starting_notes, name)
 
-if __name__ == '__main__':
-    GenerateMusic().generate_from_input()
+    @property
+    def current_model(self):
+        return self.selected_model
 
 
 def generate_from_genre(selected_genre, starting_notes, name):
@@ -222,7 +237,10 @@ def generate_from_genre(selected_genre, starting_notes, name):
         raise ValueError
 
     model = tf.keras.models.load_model(os.path.join(base_dir, f'{selected_genre}.h5'))
-    GenerateMusic().generate_music(starting_notes, name, model)
+    MusicGenerator().generate_music(starting_notes, name, model)
 
+
+if __name__ == '__main__':
+    MusicGenerator().generate_from_input()
 
 
